@@ -10,6 +10,9 @@ Local OpenAI-compatible API that forwards requests to GPT via browser extension.
 - Firefox/Chromium extension in `chatgpt-bridge-ext`
 - Logged-in GPT tab at https://chatgpt.com (Didn't test logged out case)
 
+Open FireFox and type about debugging. Click "This FireFox" and click "Load Temporary Add-on..."
+Browse and select manifest.json from the folder "chatgpt-bridge-ext" in this repo - this will load the temporary extension to youur FireFox.
+
 ## Install
 
 ```bash
