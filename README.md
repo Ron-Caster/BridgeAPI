@@ -1,12 +1,12 @@
-# ChatGPT CLI Local Bridge
+# GPT CLI Local Bridge
 
-Local OpenAI-compatible API that forwards requests to ChatGPT via browser extension.
+Local OpenAI-compatible API that forwards requests to GPT via browser extension.
 
 ## Requirements
 
 - Python (3.12 used while making)
 - Firefox/Chromium extension in `chatgpt-bridge-ext`
-- Logged-in ChatGPT tab at https://chatgpt.com (Didn't test logged out case)
+- Logged-in GPT tab at https://chatgpt.com (Didn't test logged out case)
 
 ## Install
 
