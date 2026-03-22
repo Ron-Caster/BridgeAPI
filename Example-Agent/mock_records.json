@@ -1,0 +1,25 @@
+{
+  "records": [
+    {
+      "id": "u_1001",
+      "name": "Ava Patel",
+      "email": "ava.patel@example.com",
+      "plan": "pro",
+      "status": "active"
+    },
+    {
+      "id": "u_1002",
+      "name": "Noah Kim",
+      "email": "noah.kim@example.com",
+      "plan": "free",
+      "status": "trial"
+    },
+    {
+      "id": "u_1003",
+      "name": "Mia Chen",
+      "email": "mia.chen@example.com",
+      "plan": "team",
+      "status": "suspended"
+    }
+  ]
+}
