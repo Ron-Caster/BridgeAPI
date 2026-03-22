@@ -2,6 +2,8 @@
 
 Local OpenAI-compatible API that forwards requests to GPT via browser extension.
 
+<img width="1861" height="984" alt="example" src="https://github.com/user-attachments/assets/6a8469e6-934d-462f-a681-78681cb88d53" />
+
 ## Requirements
 
 - Python (3.12 used while making)
