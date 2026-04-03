@@ -55,19 +55,25 @@ class BridgeState:
                     "Browser extension is not connected. Open chatgpt.com and ensure the bridge extension is enabled."
                 )
 
+            print(f"[bridge] forwarding prompt ({len(str(prompt or ''))} chars)")
             await self.websocket.send(json.dumps({"type": "prompt", "text": prompt}))
             try:
                 response = await asyncio.wait_for(self.websocket.recv(), timeout=45.0)
             except asyncio.TimeoutError as exc:
+                print("[bridge] browser response timeout")
                 raise RuntimeError(
                     "Timed out waiting for browser response. Check the ChatGPT tab and extension state."
                 ) from exc
             data = json.loads(response)
 
             if data.get("type") == "response":
-                return data.get("text", "")
+                text = data.get("text", "")
+                print(f"[bridge] received response ({len(str(text))} chars)")
+                return text
             if data.get("type") == "error":
-                raise RuntimeError(data.get("text", "Unknown extension error"))
+                message = data.get("text", "Unknown extension error")
+                print(f"[bridge] extension error: {message}")
+                raise RuntimeError(message)
             raise RuntimeError("Unexpected message received from extension")
 
 
@@ -236,6 +242,10 @@ def extract_tool_call_from_text(text):
                     arguments = parse_loose_arguments(raw_arguments)
 
     return {"name": tool_name, "arguments": arguments}
+
+
+def looks_like_tool_call_payload(text):
+    return bool(re.search(r"[\"']tool_call[\"']\s*:", str(text or "")))
 
 
 def openai_chat_response(model, text):
@@ -547,7 +557,10 @@ def stream_plan_response_from_future(handler, model, plan_future, timeout_second
     if isinstance(plan.get("final"), str):
         final_text = plan.get("final", "").strip()
     if not final_text:
-        final_text = str(plan_text).strip() or "No response generated."
+        if looks_like_tool_call_payload(plan_text):
+            final_text = "Bridge planner returned malformed tool-call JSON. Please retry this request."
+        else:
+            final_text = str(plan_text).strip() or "No response generated."
 
     for chunk in iter_text_chunks(final_text):
         sse_emit(
@@ -735,13 +748,14 @@ class OpenAICompatibleHandler(BaseHTTPRequestHandler):
         stream_mode = bool(payload.get("stream"))
         model = payload.get("model") or "chatgpt-browser-bridge"
         tools = payload.get("tools") or []
-        has_tool_result = any(m.get("role") == "tool" for m in messages)
+        last_role = str((messages[-1] or {}).get("role", "")).strip().lower()
+        is_tool_followup = last_role == "tool"
 
         prompt = extract_user_prompt(messages)
-        if not prompt and not has_tool_result:
+        if not prompt and not is_tool_followup:
             return json_response(self, {"error": "No user text found in messages"}, status=400)
 
-        if tools and not has_tool_result:
+        if tools and not is_tool_followup:
             tool_specs = []
             for tool in tools:
                 fn = (tool or {}).get("function", {})
@@ -810,12 +824,22 @@ class OpenAICompatibleHandler(BaseHTTPRequestHandler):
                         except (BrokenPipeError, ConnectionResetError):
                             return
                     return json_response(self, openai_chat_response(model, final_text))
+
+                if looks_like_tool_call_payload(plan_text):
+                    return json_response(
+                        self,
+                        openai_chat_response(
+                            model,
+                            "Bridge planner returned malformed tool-call JSON. Please retry this request.",
+                        ),
+                    )
             except Exception as exc:
                 return json_response(self, {"error": str(exc)}, status=503)
 
-        if has_tool_result:
+        if is_tool_followup:
             answer_prompt = (
-                "You are a helpful assistant. Use the provided tool result(s) to answer the user.\n\n"
+                "You are a helpful assistant. Use the provided tool result(s) to answer the user. "
+                "Do not output JSON, and do not request additional tool calls in this step.\n\n"
                 f"CONVERSATION:\n{conversation_text(messages)}"
             )
         else:
