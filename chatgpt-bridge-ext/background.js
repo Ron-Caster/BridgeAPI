@@ -32,4 +32,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'chat_response' && socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({type: 'response', text: message.text}));
     }
+
+    if (message.type === 'chat_error' && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({type: 'error', text: message.text || 'Unknown browser bridge error'}));
+    }
 });

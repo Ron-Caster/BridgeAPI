@@ -46,11 +46,22 @@ function submitPrompt(text) {
 function waitForNewResponse(initialCount) {
     let textStableCount = 0;
     let lastText = "";
+    const maxWaitMs = 45000;
+    const startedAt = Date.now();
 
     console.log("Waiting for ChatGPT to finish generating...");
 
     const checkInterval = setInterval(() => {
         const responses = document.querySelectorAll('div[data-message-author-role="assistant"]');
+
+        if (Date.now() - startedAt > maxWaitMs) {
+            clearInterval(checkInterval);
+            chrome.runtime.sendMessage({
+                type: 'chat_error',
+                text: 'Timed out waiting for ChatGPT response in browser. Please check if generation is blocked.',
+            });
+            return;
+        }
         
         // 3. Has the new message appeared in the DOM yet?
         if (responses.length > initialCount || (initialCount === 0 && responses.length > 0)) {
