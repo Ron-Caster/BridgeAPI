@@ -11,15 +11,7 @@ function connectToPython() {
             // Find the active ChatGPT tab and send it the user's text
             chrome.tabs.query({url: "*://*.chatgpt.com/*"}, (tabs) => {
                 if (tabs.length > 0) {
-                    const activeTab = tabs.find((tab) => tab.active) || tabs[0];
-                    chrome.tabs.sendMessage(activeTab.id, {type: 'send_prompt', text: data.text}, () => {
-                        if (chrome.runtime.lastError && socket && socket.readyState === WebSocket.OPEN) {
-                            socket.send(JSON.stringify({
-                                type: 'error',
-                                text: `Failed to deliver prompt to tab: ${chrome.runtime.lastError.message}`,
-                            }));
-                        }
-                    });
+                    chrome.tabs.sendMessage(tabs[0].id, {type: 'send_prompt', text: data.text});
                 } else {
                     socket.send(JSON.stringify({type: 'error', text: 'No ChatGPT tab found. Please open chatgpt.com'}));
                 }

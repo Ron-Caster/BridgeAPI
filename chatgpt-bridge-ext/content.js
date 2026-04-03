@@ -4,43 +4,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-const BRIDGE_OPTIONS = {
-    // Set true to require an authenticated ChatGPT session before sending prompts.
-    // Default false allows attempts in logged-out/guest mode when the site supports it.
-    requireLoggedIn: false,
-};
-
-function sendBridgeError(text) {
-    chrome.runtime.sendMessage({type: 'chat_error', text});
-}
-
-function isLikelyLoggedOut() {
-    const candidates = document.querySelectorAll('button, a');
-    for (const el of candidates) {
-        const text = (el.textContent || '').trim();
-        if (/^log in$/i.test(text) || /^sign up/i.test(text)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 function submitPrompt(text) {
     console.log("🔥 BRIDGE ACTIVE: Received this from Python ->", text);
-
-    if (BRIDGE_OPTIONS.requireLoggedIn && isLikelyLoggedOut()) {
-        sendBridgeError('ChatGPT appears logged out. Please log in at chatgpt.com and retry.');
-        return;
-    }
-
-    if (!BRIDGE_OPTIONS.requireLoggedIn && isLikelyLoggedOut()) {
-        console.warn('Bridge running in guest-mode attempt while logged out.');
-    }
 
     const promptBox = document.querySelector('#prompt-textarea');
     if (!promptBox) {
         console.error("Could not find prompt box!");
-        sendBridgeError('ChatGPT input box not found. Open an active chat page and retry.');
         return;
     }
 
